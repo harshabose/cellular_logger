@@ -1,6 +1,6 @@
 # Cellular Localization Logging
 
-A Go-based logging tool for collecting data from MAVLink-enabled devices and cellular modems via AT commands. This tool captures telemetry data and cellular information for analysis and research purposes.
+A Go-based logging tool for collecting data from MAVLink-enabled devices and cellular modems via AT commands.
 
 ## Features
 
@@ -20,7 +20,7 @@ A Go-based logging tool for collecting data from MAVLink-enabled devices and cel
 ```bash
 git clone https://github.com/harshabose/cellular_localisation_logging
 cd cellular_localisation_logging
-go build -o cellular_logger main.go
+go build -o build/log/cellular_logger cmd/log/main.go
 ```
 
 ## Usage
@@ -179,16 +179,10 @@ Each log entry is written as a separate JSON object:
 ```
 
 ### CSV
-Tabular format with headers for easy analysis in spreadsheet applications.
+Tabular format with headers.
 
 ### Binary
-Compact binary format with length-prefixed JSON entries.
-
-## Hardware Requirements
-
-- **MAVLink Device**: Any device supporting MAVLink protocol (Pixhawk, ArduPilot, etc.)
-- **Cellular Modem**: Any modem supporting standard AT commands
-- **Serial Connections**: USB-to-serial adapters or direct UART connections
+Binary format with length-prefixed JSON entries.
 
 ## Troubleshooting
 
@@ -206,7 +200,6 @@ sudo chmod 666 /dev/ttyUSB*       # Or set permissions directly
 ### Timeout Errors
 - Increase timeout values for slow devices
 - Check baud rate settings match your hardware
-- Verify cable connections and signal quality
 
 ## Dependencies
 

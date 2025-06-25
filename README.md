@@ -155,18 +155,27 @@ Use ./cellular_logger --list to see all currently supported message names in you
 Each log entry is written as a separate JSON object:
 ```json
 {
-  "index": 1,
-  "message_type": "mavlink-30",
-  "success": true,
-  "data": {
-    "roll": 0.123,
-    "pitch": -0.045,
-    "yaw": 1.234
+  "index":0,
+  "message_type":"mavlink-26",
+  "success":true,
+  "data":{
+    "TimeBootMs":646794,
+    "Xacc":-1,
+    "Yacc":-39,
+    "Zacc":-995,
+    "Xgyro":-1,
+    "Ygyro":1,
+    "Zgyro":-1,
+    "Xmag":272,
+    "Ymag":62,
+    "Zmag":89,
+    "Temperature":4577
   },
-  "request_time": "2024-01-01T12:00:00Z",
-  "response_time": "2024-01-01T12:00:00.1Z",
-  "duration": 100000000
+  "request_time":"2025-06-25T07:22:48.079534+05:30",
+  "response_time":"2025-06-25T07:22:48.084896+05:30",
+  "duration":5361875
 }
+
 ```
 
 ### CSV

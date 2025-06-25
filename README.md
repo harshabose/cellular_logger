@@ -46,7 +46,6 @@ go build -o cellular_logger main.go
 | `--at-baud`     | AT command baud rate                          | 115200       |
 | `--at-timeout`  | AT command timeout                            | 5s           |
 | `--list`        | List available messages and exit              | false        |
-| `--verbose`     | Enable verbose logging                        | false        |
 
 ### Message Types
 

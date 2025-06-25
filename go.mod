@@ -13,6 +13,7 @@ require (
 	github.com/pion/logging v0.2.2 // indirect
 	github.com/pion/transport/v2 v2.2.10 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/tarm/serial v0.0.0-20180830185346-98f6abe2eb07 // indirect
 	go.bug.st/serial v1.6.2 // indirect
 	golang.org/x/net v0.41.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect

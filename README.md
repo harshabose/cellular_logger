@@ -194,12 +194,11 @@ sudo chmod 666 /dev/ttyUSB*       # Or set permissions directly
 
 ### Device Not Found
 - Check device paths with `ls /dev/ttyUSB*`
-- Verify devices are connected and recognized
 - Use `dmesg` to check for connection messages
 
 ### Timeout Errors
 - Increase timeout values for slow devices
-- Check baud rate settings match your hardware
+- Check baud rate settings match hardware
 
 ## Dependencies
 

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/bluenviron/gomavlib/v3"
+	"github.com/bluenviron/gomavlib/v3/pkg/dialects/all"
 	"github.com/bluenviron/gomavlib/v3/pkg/dialects/ardupilotmega"
 	"github.com/bluenviron/gomavlib/v3/pkg/dialects/common"
 
@@ -43,19 +44,105 @@ type Config struct {
 }
 
 var mavlinkRegistry = map[string]func(context.Context) cellularlog.Message{
+	// IMU Messages (for inertial navigation)
+	"SCALED_IMU": func(ctx context.Context) cellularlog.Message {
+		return mavlink.NewMessage[*ardupilotmega.MessageScaledImu](ctx)
+	},
 	"SCALED_IMU2": func(ctx context.Context) cellularlog.Message {
 		return mavlink.NewMessage[*ardupilotmega.MessageScaledImu2](ctx)
 	},
-	"ATTITUDE": func(ctx context.Context) cellularlog.Message {
-		return mavlink.NewMessage[*common.MessageAttitude](ctx)
+	"SCALED_IMU3": func(ctx context.Context) cellularlog.Message {
+		return mavlink.NewMessage[*ardupilotmega.MessageScaledImu3](ctx)
 	},
+	"RAW_IMU": func(ctx context.Context) cellularlog.Message {
+		return mavlink.NewMessage[*ardupilotmega.MessageRawImu](ctx)
+	},
+
+	// GPS Messages (for satellite-based positioning)
 	"GPS_RAW_INT": func(ctx context.Context) cellularlog.Message {
 		return mavlink.NewMessage[*common.MessageGpsRawInt](ctx)
 	},
-	// Add more messages here as needed
-	// "HEARTBEAT": func(ctx context.Context) cellularlog.Message {
-	//     return mavlink.NewMessage[*common.MessageHeartbeat](ctx)
-	// },
+	"GPS2_RAW": func(ctx context.Context) cellularlog.Message {
+		return mavlink.NewMessage[*ardupilotmega.MessageGps2Raw](ctx)
+	},
+	"GPS_STATUS": func(ctx context.Context) cellularlog.Message {
+		return mavlink.NewMessage[*common.MessageGpsStatus](ctx)
+	},
+
+	// Position Messages (for fused position estimates)
+	"GLOBAL_POSITION_INT": func(ctx context.Context) cellularlog.Message {
+		return mavlink.NewMessage[*common.MessageGlobalPositionInt](ctx)
+	},
+	"LOCAL_POSITION_NED": func(ctx context.Context) cellularlog.Message {
+		return mavlink.NewMessage[*common.MessageLocalPositionNed](ctx)
+	},
+
+	// Attitude and Orientation (for complete pose estimation)
+	"ATTITUDE": func(ctx context.Context) cellularlog.Message {
+		return mavlink.NewMessage[*common.MessageAttitude](ctx)
+	},
+	"ATTITUDE_QUATERNION": func(ctx context.Context) cellularlog.Message {
+		return mavlink.NewMessage[*common.MessageAttitudeQuaternion](ctx)
+	},
+
+	// Magnetometer Messages (for compass/heading data)
+	"SCALED_PRESSURE": func(ctx context.Context) cellularlog.Message {
+		return mavlink.NewMessage[*common.MessageScaledPressure](ctx)
+	},
+	"MAG_CAL_REPORT": func(ctx context.Context) cellularlog.Message {
+		return mavlink.NewMessage[*ardupilotmega.MessageMagCalReport](ctx)
+	},
+
+	// Navigation and Control Messages
+	"NAV_CONTROLLER_OUTPUT": func(ctx context.Context) cellularlog.Message {
+		return mavlink.NewMessage[*common.MessageNavControllerOutput](ctx)
+	},
+	"POSITION_TARGET_GLOBAL_INT": func(ctx context.Context) cellularlog.Message {
+		return mavlink.NewMessage[*common.MessagePositionTargetGlobalInt](ctx)
+	},
+	"POSITION_TARGET_LOCAL_NED": func(ctx context.Context) cellularlog.Message {
+		return mavlink.NewMessage[*common.MessagePositionTargetLocalNed](ctx)
+	},
+
+	// System Status (for understanding system state)
+	"SYS_STATUS": func(ctx context.Context) cellularlog.Message {
+		return mavlink.NewMessage[*common.MessageSysStatus](ctx)
+	},
+	"HEARTBEAT": func(ctx context.Context) cellularlog.Message {
+		return mavlink.NewMessage[*common.MessageHeartbeat](ctx)
+	},
+
+	// EKF/Filter Status (for understanding fusion quality)
+	"EKF_STATUS_REPORT": func(ctx context.Context) cellularlog.Message {
+		return mavlink.NewMessage[*ardupilotmega.MessageEkfStatusReport](ctx)
+	},
+	"AHRS": func(ctx context.Context) cellularlog.Message {
+		return mavlink.NewMessage[*ardupilotmega.MessageAhrs](ctx)
+	},
+	"AHRS2": func(ctx context.Context) cellularlog.Message {
+		return mavlink.NewMessage[*ardupilotmega.MessageAhrs2](ctx)
+	},
+
+	// High-rate position data
+	"HIGH_LATENCY": func(ctx context.Context) cellularlog.Message {
+		return mavlink.NewMessage[*common.MessageHighLatency](ctx)
+	},
+	"HIGH_LATENCY2": func(ctx context.Context) cellularlog.Message {
+		return mavlink.NewMessage[*common.MessageHighLatency2](ctx)
+	},
+
+	// Optical Flow (if available - for visual positioning)
+	"OPTICAL_FLOW": func(ctx context.Context) cellularlog.Message {
+		return mavlink.NewMessage[*common.MessageOpticalFlow](ctx)
+	},
+	"OPTICAL_FLOW_RAD": func(ctx context.Context) cellularlog.Message {
+		return mavlink.NewMessage[*common.MessageOpticalFlowRad](ctx)
+	},
+
+	// Velocity and acceleration
+	"LOCAL_POSITION_NED_SYSTEM_GLOBAL_OFFSET": func(ctx context.Context) cellularlog.Message {
+		return mavlink.NewMessage[*common.MessageLocalPositionNedSystemGlobalOffset](ctx)
+	},
 }
 
 func main() {
@@ -225,23 +312,10 @@ func createMAVLinkMessage(name string, ctx context.Context) (cellularlog.Message
 	}
 
 	if id, err := strconv.Atoi(name); err == nil {
-		return createMAVLinkMessageByID(uint32(id), ctx)
+		return mavlink.CreateMAVLinkMessageByID(uint32(id), ctx)
 	}
 
 	return nil, fmt.Errorf("unknown MAVLink message: %s", name)
-}
-
-func createMAVLinkMessageByID(id uint32, ctx context.Context) (cellularlog.Message, error) {
-	switch id {
-	case 29: // SCALED_IMU2
-		return mavlink.NewMessage[*ardupilotmega.MessageScaledImu2](ctx), nil
-	case 30: // ATTITUDE
-		return mavlink.NewMessage[*common.MessageAttitude](ctx), nil
-	case 24: // GPS_RAW_INT
-		return mavlink.NewMessage[*common.MessageGpsRawInt](ctx), nil
-	default:
-		return nil, fmt.Errorf("unsupported message ID: %d", id)
-	}
 }
 
 func createWriter(config *Config) (cellularlog.Writer, error) {
@@ -295,7 +369,7 @@ func initializeRequesters(processor *cellularlog.Processor, config *Config) erro
 			config.MAVDevice,
 			config.MAVBaud,
 			config.MAVTimeout,
-			ardupilotmega.Dialect,
+			all.Dialect,
 			gomavlib.V2,
 		)
 		if err != nil {

@@ -32,34 +32,100 @@ go build -o cellular_logger main.go
 
 ### Command Line Options
 
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--messages` | Comma-separated list of messages to log | Required |
-| `--output` | Output format: json, csv, binary, or multiple | json |
-| `--file` | Output file prefix | cellular_log |
-| `--interval` | Polling interval | 1s |
-| `--buffer` | Log buffer size for batching | 100 |
-| `--mav-device` | MAVLink serial device | /dev/ttyUSB0 |
-| `--mav-baud` | MAVLink baud rate | 57600 |
-| `--mav-timeout` | MAVLink request timeout | 5s |
-| `--at-device` | AT command serial device | /dev/ttyUSB1 |
-| `--at-baud` | AT command baud rate | 115200 |
-| `--at-timeout` | AT command timeout | 5s |
-| `--list` | List available messages and exit | false |
-| `--verbose` | Enable verbose logging | false |
+| Flag            | Description                                   | Default      |
+|-----------------|-----------------------------------------------|--------------|
+| `--messages`    | Comma-separated list of messages to log       | Required     |
+| `--output`      | Output format: json, csv, binary, or multiple | json         |
+| `--file`        | Output file prefix                            | cellular_log |
+| `--interval`    | Polling interval                              | 1s           |
+| `--buffer`      | Log buffer size for batching                  | 100          |
+| `--mav-device`  | MAVLink serial device                         | /dev/ttyUSB0 |
+| `--mav-baud`    | MAVLink baud rate                             | 57600        |
+| `--mav-timeout` | MAVLink request timeout                       | 5s           |
+| `--at-device`   | AT command serial device                      | /dev/ttyUSB1 |
+| `--at-baud`     | AT command baud rate                          | 115200       |
+| `--at-timeout`  | AT command timeout                            | 5s           |
+| `--list`        | List available messages and exit              | false        |
+| `--verbose`     | Enable verbose logging                        | false        |
 
 ### Message Types
 
 #### MAVLink Messages
-- `mavlink:SCALED_IMU2` - Scaled IMU data
-- `mavlink:ATTITUDE` - Vehicle attitude
+
+##### IMU and Sensor Data:
+- `mavlink:SCALED_IMU` - Scaled IMU data (primary)
+- `mavlink:SCALED_IMU2` - Scaled IMU data (secondary)
+- `mavlink:SCALED_IMU3` - Scaled IMU data (tertiary)
+- `mavlink:RAW_IMU` - Raw IMU measurements
+- `mavlink:SCALED_PRESSURE` - Barometric pressure/altitude
+
+##### GPS and Positioning:
 - `mavlink:GPS_RAW_INT` - Raw GPS data
+- `mavlink:GPS2_RAW` - Secondary GPS data
+- `mavlink:GPS_STATUS` - GPS satellite count and accuracy metrics
+- `mavlink:GLOBAL_POSITION_INT` - Fused global position
+- `mavlink:LOCAL_POSITION_NED` - Local position in NED frame
+
+##### Attitude and Orientation:
+- `mavlink:ATTITUDE` - Vehicle attitude (Euler angles)
+- `mavlink:ATTITUDE_QUATERNION` - Vehicle attitude (quaternions)
+
+##### Navigation and Control:
+- `mavlink:NAV_CONTROLLER_OUTPUT` - Navigation controller data
+- `mavlink:POSITION_TARGET_GLOBAL_INT` - Global position targets
+- `mavlink:POSITION_TARGET_LOCAL_NED` - Local position targets
+
+##### System and Filter Status:
+- `mavlink:SYS_STATUS` - System status and health
+- `mavlink:HEARTBEAT` - System heartbeat
+- `mavlink:EKF_STATUS_REPORT` - Extended Kalman Filter status
+- `mavlink:AHRS` - Attitude and Heading Reference System
+- `mavlink:AHRS2` - Secondary AHRS data
+
+##### Visual and Optical:
+- `mavlink:OPTICAL_FLOW` - Optical flow data
+- `mavlink:OPTICAL_FLOW_RAD` - Optical flow (radians)
+
+##### High-Level Data:
+- `mavlink:HIGH_LATENCY` - High-latency telemetry
+- `mavlink:HIGH_LATENCY2` - Extended high-latency telemetry
+
+##### Using Message IDs:
+Any MAVLink message can also be specified using its numeric ID instead of name:
+- `mavlink:0` - HEARTBEAT
+- `mavlink:24` - GPS_RAW_INT
+- `mavlink:30` - ATTITUDE
+- `mavlink:33` - GLOBAL_POSITION_INT
+- `mavlink:242` - EKF_STATUS_REPORT
+- etc.
+
+**Example using IDs:**
+```bash
+./cellular_logger --messages="mavlink:24,mavlink:30,mavlink:33" --output=json
+```
+Use ./cellular_logger --list to see all currently supported message names in your installation.
+
+
+
+
 
 #### AT Commands
+
+##### Basic Modem Information:
 - `at:I` - Modem identification
+- `at:+GCAP` - Capability list
+- 1`at:+CPIN?` - PIN status
+##### Network and Signal Quality:
 - `at:+CSQ` - Signal quality
-- `at:+CREG?` - Network registration status
-- `at:+CPIN?` - PIN status
+- `at:+CREG?` - 2G/3G network registration status
+- `at:+CEREG?` - 4G/5G network registration and location info
+- `at:+COPS?` - Operator selection and network info
+##### Location and Cell Information:
+- `at:+CGPADDR` - IP address and location data
+- `at:+QENG="servingcell"` - Serving cell information (Quectel modems)
+- `at:+QGPSLOC?` - Built-in GPS location (if available)
+##### Configuration and Status:
+- `at:+CNMI=?` - New message indication settings
 - Any valid AT command
 
 ### Examples
@@ -139,3 +205,8 @@ sudo chmod 666 /dev/ttyUSB*       # Or set permissions directly
 - [gomavlib](https://github.com/bluenviron/gomavlib) - MAVLink protocol implementation
 - [modem](https://github.com/warthog618/modem) - AT command interface
 - [gods](https://github.com/emirpasic/gods) - Data structures
+- For a complete list of all MAVLink message IDs and definitions, refer to:
+
+  - [MAVLink Common Messages](https://mavlink.io/en/messages/common.html)
+  - [ArduPilot-Specific Messages](https://mavlink.io/en/messages/ardupilotmega.html)
+  - [All Message Definitions](https://github.com/mavlink/mavlink/tree/master/message_definitions/v1.0)

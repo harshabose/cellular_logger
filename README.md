@@ -12,7 +12,7 @@ A Go-based logging tool for collecting data from MAVLink-enabled devices and cel
 ## Installation
 
 ### Prerequisites
-- Go 1.19 or later
+- Go 1.24 or later
 - Serial devices accessible (typically `/dev/ttyUSB*` on Linux)
 - Appropriate permissions to access serial ports
 

@@ -22,11 +22,12 @@ import (
 )
 
 type Config struct {
-	Messages     string
-	OutputFormat string
-	OutputFile   string
-	BufferSize   int
-	Interval     time.Duration
+	Messages        string
+	OutputFormat    string
+	OutputFile      string
+	BufferSize      int
+	PollingInterval time.Duration
+	WriterInterval  time.Duration
 
 	// MAVLink specific
 	MAVDevice  string
@@ -40,7 +41,6 @@ type Config struct {
 
 	// Utility flags
 	ListMessages bool
-	Verbose      bool
 }
 
 var mavlinkRegistry = map[string]func(context.Context) cellularlog.Message{
@@ -171,9 +171,10 @@ func parseFlags() *Config {
 	// Main flags
 	flag.StringVar(&config.Messages, "messages", "", "Comma-separated list of messages (e.g., mavlink:SCALED_IMU2,at:I)")
 	flag.StringVar(&config.OutputFormat, "output", "json", "Output format: json, csv, binary, or multiple (csv,json)")
-	flag.StringVar(&config.OutputFile, "file", "cellular_log", "Output file prefix (extension added automatically)")
+	flag.StringVar(&config.OutputFile, "file", generateTimestampedFilename("cellular_logger"), "Output file prefix (extension added automatically)")
 	flag.IntVar(&config.BufferSize, "buffer", 100, "Log buffer size for batching")
-	flag.DurationVar(&config.Interval, "interval", 1*time.Second, "Polling interval")
+	flag.DurationVar(&config.PollingInterval, "polling-interval", 1*time.Second, "Polling interval")
+	flag.DurationVar(&config.WriterInterval, "writer-interval", 30*time.Second, "Polling interval")
 
 	// MAVLink flags
 	flag.StringVar(&config.MAVDevice, "mav-device", "/dev/ttyUSB0", "MAVLink serial device")
@@ -187,11 +188,16 @@ func parseFlags() *Config {
 
 	// Utility flags
 	flag.BoolVar(&config.ListMessages, "list", false, "List available messages and exit")
-	flag.BoolVar(&config.Verbose, "verbose", false, "Enable verbose logging")
 
 	flag.Parse()
 
 	return config
+}
+
+// generateTimestampedFilename creates a filename with timestamp
+func generateTimestampedFilename(prefix string) string {
+	timestamp := time.Now().Format("2006-01-02_15-04-05")
+	return fmt.Sprintf("%s_%s", prefix, timestamp)
 }
 
 func listAvailableMessages() {
@@ -234,7 +240,8 @@ func run(config *Config) error {
 
 	processor := cellularlog.NewProcessor(
 		ctx,
-		config.Interval,
+		config.PollingInterval,
+		config.WriterInterval,
 		writer,
 		config.BufferSize,
 		messages...,
@@ -249,16 +256,7 @@ func run(config *Config) error {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
-	if config.Verbose {
-		fmt.Printf("Starting logger with %d messages, interval: %v\n", len(messages), config.Interval)
-		fmt.Printf("Output: %s -> %s\n", config.OutputFormat, config.OutputFile)
-	}
-
 	<-sigChan
-
-	if config.Verbose {
-		fmt.Println("\nShutting down...")
-	}
 
 	// Graceful shutdown
 	return processor.Close()
@@ -361,10 +359,6 @@ func createSingleWriter(format, filePrefix string) (cellularlog.Writer, error) {
 
 func initializeRequesters(processor *cellularlog.Processor, config *Config) error {
 	if needsMAVLink(config.Messages) {
-		if config.Verbose {
-			fmt.Printf("Initializing MAVLink on %s at %d baud\n", config.MAVDevice, config.MAVBaud)
-		}
-
 		mav, err := mavlink.NewMavlink(
 			config.MAVDevice,
 			config.MAVBaud,
@@ -381,10 +375,6 @@ func initializeRequesters(processor *cellularlog.Processor, config *Config) erro
 
 	// Check if we need AT
 	if needsAT(config.Messages) {
-		if config.Verbose {
-			fmt.Printf("Initializing AT commands on %s at %d baud\n", config.ATDevice, config.ATBaud)
-		}
-
 		at, err := AT.NewAT(config.ATDevice, config.ATBaud, config.ATTimeout)
 		if err != nil {
 			return fmt.Errorf("failed to initialize AT: %w", err)

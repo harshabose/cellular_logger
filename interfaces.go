@@ -32,9 +32,10 @@ type Processor struct {
 	Mavlink Requester
 	AT      Requester
 
-	messages *hashset.Set[Message]
-	interval time.Duration
-	writer   Writer
+	messages        *hashset.Set[Message]
+	pollingInterval time.Duration
+	writerInterval  time.Duration
+	writer          Writer
 
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -47,17 +48,18 @@ type Processor struct {
 	logMux       sync.Mutex
 }
 
-func NewProcessor(ctx context.Context, interval time.Duration, writer Writer, buffsize int, messages ...Message) *Processor {
+func NewProcessor(ctx context.Context, pollingInterval time.Duration, writerInterval time.Duration, writer Writer, buffsize int, messages ...Message) *Processor {
 	ctx2, cancel := context.WithCancel(ctx)
 
 	p := &Processor{
-		messages:     hashset.New(messages...),
-		writer:       writer,
-		interval:     interval,
-		ctx:          ctx2,
-		cancel:       cancel,
-		logBatchSize: buffsize,
-		logBuffer:    make([]LogEntry, 0, buffsize),
+		messages:        hashset.New(messages...),
+		writer:          writer,
+		pollingInterval: pollingInterval,
+		writerInterval:  writerInterval,
+		ctx:             ctx2,
+		cancel:          cancel,
+		logBatchSize:    buffsize,
+		logBuffer:       make([]LogEntry, 0, buffsize),
 	}
 
 	return p
@@ -85,11 +87,11 @@ func (p *Processor) Start() {
 func (p *Processor) loop() {
 	defer p.wg.Done()
 
-	ticker := time.NewTicker(p.interval)
+	ticker := time.NewTicker(p.pollingInterval)
 	defer ticker.Stop()
 
 	// Periodic log flushing
-	logTicker := time.NewTicker(5 * time.Second)
+	logTicker := time.NewTicker(p.writerInterval)
 	defer logTicker.Stop()
 
 	for {

@@ -1,0 +1,33 @@
+[Unit]
+Description=Cellular Localization Logger
+Documentation=https://github.com/harshabose/cellular_logger
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/home/jetson/cellular_logger
+ExecStart=/home/jetson/cellular_logger/build/log/cellular_logger \
+    --messages='mavlink:SCALED_IMU,mavlink:SCALED_IMU2,mavlink:SCALED_IMU3,mavlink:RAW_IMU,mavlink:GPS_RAW_INT,mavlink:GPS2_RAW,mavlink:GPS_STATUS,mavlink:GLOBAL_POSITION_INT,mavlink:LOCAL_POSITION_NED,mavlink:MAG_CAL_REPORT,at:+CSQ,at:+QENG="servingcell",at:+QENG="neighbourcell"' \
+    --output=json \
+    --polling-interval=1s \
+    --writer-interval=5s \
+    --mav-device=/dev/ttyTHS0 \
+    --at-device=/dev/ttyUSB3
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=cellular-logger
+
+MemoryMax=512M
+CPUQuota=50%
+
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
